@@ -588,6 +588,14 @@ impl Widget<Event, Theme, iced::Renderer> for TerminalView<'_> {
         _viewport: &Rectangle,
     ) -> iced::event::Status {
         let state = tree.state.downcast_mut::<TerminalViewState>();
+
+        // Fix: when Iced's Tree reconciliation recycles this state for a
+        // different terminal (e.g., tab switch), reset size to force a resize.
+        if state.terminal_id != Some(self.term.id) {
+            state.terminal_id = Some(self.term.id);
+            state.size = Size::from([0.0, 0.0]);
+        }
+
         let layout_size = layout.bounds().size();
         if state.size != layout_size {
             state.size = layout_size;
@@ -672,6 +680,7 @@ struct TerminalViewState {
     keyboard_modifiers: Modifiers,
     size: Size<f32>,
     mouse_position_on_grid: TerminalGridPoint,
+    terminal_id: Option<u64>,
 }
 
 impl TerminalViewState {
@@ -684,6 +693,7 @@ impl TerminalViewState {
             keyboard_modifiers: Modifiers::empty(),
             size: Size::from([0.0, 0.0]),
             mouse_position_on_grid: TerminalGridPoint::default(),
+            terminal_id: None,
         }
     }
 }
